@@ -1,7 +1,7 @@
 #---------------------------------------------------#
 #  A versatile workflow for linear modelling in R
 #  Matteo Santon, Fraenzi Korner-Nievergelt, Nico Michiels, Nils Anthes
-#  Version date: 27 March 2023
+#  Version date: 03 November 2023
 #  -> SUPPORT FUNCTIONS FOR THE TEMPLATE
 #---------------------------------------------------#
 
@@ -41,28 +41,28 @@ plot0.1 <- theme(axis.title.x =
                    element_text(
                      margin = margin(t = 10),
                      color = "Black", 
-                     size = 15), 
+                     size = 17), 
                  axis.title.y = 
                    element_text(
                      margin = margin(r = 20),
                      color = "Black", 
-                     size = 15), 
+                     size = 17), 
                  axis.text = 
                    element_text(
                      color = "Black",
-                     size = 12), 
+                     size = 13), 
                  axis.line = 
                    element_line(
                      color = "Black",
                      linewidth = 0.5), 
                  axis.ticks = element_line(color = "Black"),
-                 panel.background = element_rect(fill = "grey98"),
+                 panel.background = element_rect(fill = "white"),
                  panel.grid.minor = element_line(color = "White"),
                  plot.title = 
                    element_text(
-                     size = 15,
+                     size = 17,
                      face = "bold",
-                     hjust = 0.5),
+                     hjust = 0),
                  plot.subtitle = 
                    element_text(
                      size = 15,
@@ -82,13 +82,12 @@ plot0.1 <- theme(axis.title.x =
                  legend.title = 
                    element_text(
                      colour = "black",
-                     size = 15, 
+                     size = 13, 
                      face = "bold"), 
                  legend.text = 
                    element_text(
                      colour = "black",
-                     size = 12,
-                     face = "bold.italic"),
+                     size = 12),
                  legend.key.width = unit(1.5, "lines"), 
                  legend.key = element_rect(fill = NA))
 
@@ -581,8 +580,8 @@ residual_plots <- function(data, modelTMB, response) {
   poly_form <- fixed.pred[str_detect(fixed.pred, pattern = "poly")] # find poly formula if present.
   
   if(length(poly_form) > 0) {
-    poly_col <- gsub(" ", "", gsub("poly\\(|\\)|x\\=|[[:digit:]])||degree = [[:digit:]],|,|degree=[[:digit:]],|, |[[:digit:]],|, 
-                   raw=TRUE|raw=T|raw=FALSE|raw=F", "", poly_form))
+    poly_col <- gsub(" ", "", gsub(",", "", gsub("poly\\(|\\)|x\\=|[[:digit:]])||degree = [[:digit:]],|,raw=TRUE|raw=T|raw=FALSE|raw=F,|, |degree=[[:digit:]],|, |[[:digit:]]", "", poly_form)))
+    # OLD version: gsub(" ", "", gsub("poly\\(|\\)|x\\=|[[:digit:]])||degree = [[:digit:]],|,|degree=[[:digit:]],|, |[[:digit:]],|, raw=TRUE|raw=T|raw=FALSE|raw=F", "", poly_form))
     
     for (i in 1:length(poly_form)) {
       fixed.pred <- str_replace_all(fixed.pred, fixed(poly_form[i]), poly_col[i])
@@ -1174,7 +1173,7 @@ ppcheck_fun <- function(data, modelTMB, response, predictor, n.sim) {
                  col = "grey60") + # is geom_density what we are looking for?
     geom_density(data = data, 
                  aes(x = !!sym(response)), 
-                 col = "blue", size = 1.5) +
+                 col = "blue", linewidth = 1.5) +
    # scale_x_continuous(limits = c(0, quantile(simulations$value, prob = 0.999))) +
     labs(x = paste(response, ": simulated (grey) and observed (blue)", sep = ""), 
          y = "Density", 
@@ -1257,9 +1256,9 @@ autocor_check <- function(data,  modelTMB, variable, grouping, maxlag, n.sim) {
            aes(x = u, y = v)) + # this extracts distance lags and semi variance
       geom_line(data = data.rand.Var,
                 aes(x = u, y = v.rand, 
-                    group = rep.run), col = "grey80", size = 1, alpha = 0.5) +
+                    group = rep.run), col = "grey80", linewidth = 1, alpha = 0.5) +
       geom_point(col = "blue", size = 5, alpha = 0.5) +
-      geom_smooth(method = "loess", se = F, col = "blue", size = 1) +
+      geom_smooth(method = "loess", se = F, col = "blue", linewidth = 1) +
       geom_hline(yintercept = 1, col = "red", lty = 2) +
       xlab("Distance between observations") + 
       ylab("Standardised semivariance") +
@@ -1432,18 +1431,20 @@ output
 #* 7.3 Estimation of differences between factor levels ---- 
 #=========================================================#
 
+
 pairwise_comparisons <- function(data, modelTMB, predictors, component, dispScale, contrasts) {
   
   data <- as.data.frame(data)
-
-#  on dispScale, i.e. "type" in original emmeans call
-#  As in predict.emmGrid, this determines whether we want to inverse-transform the predictions (type = "response") 
-#  or not (any other choice). The default is "link", unless the "predict.type" option is in force; see emm_options. 
-#  In addition, the user may specify type = "scale" to create a transformed scale for the vertical axis 
-#  based on object’s response transformation or link function.
+  
+  #  on dispScale, i.e. "type" in original emmeans call
+  #  As in predict.emmGrid, this determines whether we want to inverse-transform the predictions (type = "response") 
+  #  or not (any other choice). The default is "link", unless the "predict.type" option is in force; see emm_options. 
+  #  In addition, the user may specify type = "scale" to create a transformed scale for the vertical axis 
+  #  based on object’s response transformation or link function.
   
   if (missing(dispScale)) {dispScale <- "response"} # can also be link or scale
   if (missing(component)) {component <- "cond"} # can also be zi
+  if (component == "all") {component <- "cond"} # reset to "cond". component = "all" does not work for this call!
   if (missing(contrasts)) {contrasts <- "all"} # can also be within
   
   if (contrasts == "within") {contrasts <- "|"}
@@ -1458,7 +1459,7 @@ pairwise_comparisons <- function(data, modelTMB, predictors, component, dispScal
   pairs <-  eval(str2expression(paste("pairwise ~", predictors[1], sep = " ")))
   if (length(predictors) > 1) {
     if (contrasts == "all") { 
-      pairs <-  eval(str2expression(paste("pairwise ~", paste(predictors[1], predictors[2], sep = " * "), sep = " ")))} else {
+      pairs <-  eval(str2expression(paste("pairwise ~", paste(predictors, collapse = " * "), sep = " ")))} else {
         pairs <-  eval(str2expression(paste("pairwise ~", paste(predictors[1], predictors[2], sep = " | "), sep = " ")))
       }
   }
@@ -1477,7 +1478,7 @@ pairwise_comparisons <- function(data, modelTMB, predictors, component, dispScal
   }
   if (contrasts == "|" && length(predictors) > 1) {
     comparisons <- comparisons$contrasts[,c(1,2,3,4,6,7)] # columns c("contrast", var.fac[2], "ratio|estimate|odds.ratio", "SE", "lower.CL", "upper.CL")
-    comparisons$contrast <- levels(interaction(comparisons[,2], comparisons[,1], sep = ": "))
+    comparisons$contrast <- paste(comparisons[,2], comparisons[,1], sep = ": ")
     comparisons <- comparisons[,c(1,3,4,5,6)]}
   
   colnames(comparisons)[c(4,5)] <- c("lower.CI","upper.CI")
@@ -1518,7 +1519,7 @@ pairwise_comparisons <- function(data, modelTMB, predictors, component, dispScal
     plot.output <- plot.output + geom_vline(xintercept = 1, linetype = 2, col = "blue") +
       labs(x = "Pairwise odds ratios: mean +/- 95% CI",
            y = NULL)}
-
+  
   if(colnames(comparisons)[2] == "estimate" & modelTMB$modelInfo$family$link == "log" & component == "cond") {
     colnames(comparisons)[2] <- c("log.ratio")
     colnames(comparisons)[c(4,5)] <- c("log.ratio_lower.CI","log.ratio_upper.CI")
@@ -1537,6 +1538,7 @@ pairwise_comparisons <- function(data, modelTMB, predictors, component, dispScal
   plot.output
   
 }
+
 
 
 #-############################################-#
@@ -1558,7 +1560,11 @@ post_predict <- function(data, modelTMB, plot_predictors, offset, component) {
     stop("ERROR: Your model contains an offset term. Please specify it in the function call.")}
     
   
+  # UPDATE 2023.10.27 (chr vectors in post_predict()) ----
+  # Make sure table comes as dataframe, and all character vectors are factors (sometimes this causes issues):
   data <- as.data.frame(data)
+  data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)], 
+                                         as.factor)
   
     # First, we create a grid...
   
@@ -1583,8 +1589,9 @@ post_predict <- function(data, modelTMB, plot_predictors, offset, component) {
   
   if(length(poly_form) > 0) {
    
-    poly_col <- gsub(" ", "", gsub("poly\\(|\\)|x\\=|[[:digit:]])||degree = [[:digit:]],|,|degree=[[:digit:]],|, |[[:digit:]],|, 
-                   raw=TRUE|raw=T|raw=FALSE|raw=F", "", poly_form))
+    poly_col <- gsub(" ", "", gsub(",", "", gsub("poly\\(|\\)|x\\=|[[:digit:]])||degree = [[:digit:]],|,raw=TRUE|raw=T|raw=FALSE|raw=F,|, |degree=[[:digit:]],|, |[[:digit:]]", "", poly_form)))
+    
+    #OLD version: gsub(" ", "", gsub("poly\\(|\\)|x\\=|[[:digit:]])||degree = [[:digit:]],|,|degree=[[:digit:]],|, |[[:digit:]],|, raw=TRUE|raw=T|raw=FALSE|raw=F", "", poly_form))
     
     for (i in 1:length(poly_form)) {
       fixed.pred <- str_replace_all(fixed.pred, fixed(poly_form[i]), poly_col[i])
@@ -1692,7 +1699,7 @@ post_predict <- function(data, modelTMB, plot_predictors, offset, component) {
   # We AVERAGE the grid across the values for the predictors of interest:
   filled_grid <- data.frame(
     grid  %>%  
-        group_by_at(all_of(plot_predictors))  %>%
+      group_by(across(all_of(plot_predictors)))  %>%
           summarize(median = median(median), pred_mod = median(pred_mod), lower = median(lower), upper = median(upper))
   )
   
@@ -1726,12 +1733,12 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
       dat_summary <- as.data.frame(data %>% 
                                      filter(!!sym(response) > 0) %>%
                                      mutate(mean = !!sym(response)/!!sym(offset))  %>%
-                                     group_by_at(all_of(predictors)) %>% 
+                                     group_by(across(all_of(predictors))) %>% 
                                      summarise(mean = mean(mean)))
       } else {
         dat_summary <- as.data.frame(data %>% 
                                        filter(!!sym(response) > 0) %>%
-                                       group_by_at(all_of(predictors)) %>% 
+                                       group_by(across(all_of(predictors))) %>% 
                                        summarize(mean = mean(!!sym(response))))
         }
         # next line adds some zeros to conditional model when some replicate levels are missing
@@ -1741,7 +1748,7 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
       if (component == "zi") {
         dat_summary <- as.data.frame(data %>% 
                                        mutate(zi_resp = case_when(!!sym(response) > 0 ~  1, !!sym(response) == 0 ~  0))  %>%
-                                       group_by_at(all_of(predictors))  %>% 
+                                       group_by(across(all_of(predictors))) %>% 
                                        summarize(mean = mean(zi_resp)))
         }
       if (component == "all") {
@@ -1750,10 +1757,10 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
             }
           dat_summary <- as.data.frame(data %>% 
                                          mutate(mean = !!sym(response)/!!sym(offset))  %>%
-                                         group_by_at(all_of(predictors)) %>% 
+                                         group_by(across(all_of(predictors))) %>% 
                                          summarise(mean = mean(mean)))
           } else {
-            dat_summary <- as.data.frame(data %>% group_by_at(all_of(predictors))  %>% summarize(mean = mean(!!sym(response))))
+            dat_summary <- as.data.frame(data %>% group_by(across(all_of(predictors)))  %>% summarize(mean = mean(!!sym(response))))
             }
         }
       } else {
@@ -1763,14 +1770,15 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
               } 
             dat_summary <- as.data.frame(data %>% 
                                            mutate(mean = !!sym(response)/!!sym(offset))  %>%
-                                           group_by_at(all_of(predictors)) %>% 
+                                           group_by(across(all_of(predictors))) %>% 
                                            summarise(mean = mean(mean)))
             } else {
               dat_summary <- as.data.frame(data %>% 
-                                             group_by_at(all_of(predictors)) %>%
+                                             group_by(across(all_of(predictors))) %>%
                                              summarize(mean = mean(!!sym(response))))
             }
-          }
+        } else {stop("ERROR: You implemented a zero-inflated model, please set component to “all”. If you want to model the zi-component separately, implement a hurdle model instead.")}
+        
         }
   } else {
       if (missing(component)) {component <- "all"}
@@ -1782,12 +1790,12 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
           dat_summary <- as.data.frame(data %>%  
                                          filter(!!sym(response) > 0) %>% 
                                          mutate(mean = !!sym(response)/!!sym(offset))  %>%
-                                         group_by_at(all_of(predictors)) %>% 
+                                         group_by(across(all_of(predictors))) %>% 
                                          summarise(mean = mean(mean)))
           } else {
             dat_summary <- as.data.frame(data  %>%  
                                            filter(!!sym(response) > 0) %>% 
-                                           group_by_at(all_of(predictors)) %>% 
+                                           group_by(across(all_of(predictors))) %>% 
                                            mutate(mean = !!sym(response)))
             }
         # next line adds some zeros to conditional model when some replicate levels are missing
@@ -1797,7 +1805,7 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
       if (component == "zi") {
         dat_summary <- as.data.frame(data %>% 
                                        mutate(zi_resp = case_when(!!sym(response) > 0 ~  1, !!sym(response) == 0 ~  0))  %>%
-                                       group_by_at(all_of(predictors))  %>% 
+                                       group_by(across(all_of(predictors)))  %>% 
                                        mutate(mean = zi_resp))
         }
       if (component == "all") {
@@ -1806,10 +1814,10 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
             }
           dat_summary <- as.data.frame(data %>% 
                                          mutate(mean = !!sym(response)/!!sym(offset))  %>%
-                                         group_by_at(all_of(predictors)) %>% 
+                                         group_by(across(all_of(predictors))) %>% 
                                          summarise(mean = mean(mean)))
           } else {
-            dat_summary <- as.data.frame(data %>% group_by_at(all_of(predictors))  %>%  mutate(mean = !!sym(response)))
+            dat_summary <- as.data.frame(data %>% group_by(across(all_of(predictors)))  %>%  mutate(mean = !!sym(response)))
           }
         }
       } else {
@@ -1819,11 +1827,11 @@ display_raw <- function(data, modelTMB, plot_predictors, plot_random, response, 
               }
             dat_summary <- as.data.frame(data %>% 
                                            mutate(mean = !!sym(response)/!!sym(offset))  %>%
-                                           group_by_at(all_of(predictors)) %>% 
+                                           group_by(across(all_of(predictors))) %>% 
                                            summarise(mean = mean(mean)))  
             } else {
               dat_summary <- as.data.frame(data %>% 
-                                             group_by_at(all_of(predictors))  %>% 
+                                             group_by(across(all_of(predictors)))  %>% 
                                              mutate(mean = !!sym(response)))
             }
           }
@@ -1883,7 +1891,7 @@ final_plotting <- function(data_summary, predictions, predictors, response, inte
                     aes(ymax = upper, ymin = lower, 
                         y = pred_mod,
                         x = predictions[, predictors], col = predictions[, predictors]),
-                    width = width.error.bars, size = size.error.bars) + 
+                    width = width.error.bars, linewidth = size.error.bars) + 
       geom_point(data = predictions, 
                  aes(y = pred_mod,
                      x = predictions[, predictors], fill = predictions[, predictors], shape = predictions[, predictors],
@@ -1895,7 +1903,7 @@ final_plotting <- function(data_summary, predictions, predictors, response, inte
                                             ymin = lower, ymax = upper), 
                     alpha = alpha.error.bars, bg = col.error.bars) +
         geom_line(data = predictions, aes(x = predictions[, predictors], y = pred_mod), 
-                  size = 0.8, linetype = "dashed", colour = col.error.bars) +
+                  linewidth = 0.8, linetype = "dashed", colour = col.error.bars) +
         geom_point(size = size.points, shape = shape.points, bg = col.fill.points, col = col.outline.points, alpha = alpha.points,
                    position = position_jitter(width = jitter.points, height = 0)) 
     }
@@ -1966,7 +1974,7 @@ final_plotting <- function(data_summary, predictions, predictors, response, inte
         
         if (interaction.lines == T) {
           plot.2pred <- plot.2pred + 
-            geom_line(position = position_dodge(0.7), linetype = "dashed", size = 0.5, alpha = 0.6,
+            geom_line(position = position_dodge(0.7), linetype = "dashed", linewidth = 0.5, alpha = 0.6,
                       aes(group = predictions[, pred.x2], col = predictions[, pred.x2]))}  # interaction lines if needed
         
         plot.2pred <- plot.2pred +
@@ -1974,7 +1982,7 @@ final_plotting <- function(data_summary, predictions, predictors, response, inte
                             ymin = lower, 
                             col = predictions[, pred.x2]),
                         width = width.error.bars, 
-                        size = size.error.bars, 
+                        linewidth = size.error.bars, 
                         position = position_dodge(0.7)) +
           geom_point(aes(col = predictions[, pred.x2], 
                          shape = predictions[, pred.x2], 
@@ -1992,7 +2000,7 @@ final_plotting <- function(data_summary, predictions, predictors, response, inte
                       alpha = alpha.error.bars) +
           geom_line(aes(col = predictions[, pred.x2],
                         linetype = predictions[, pred.x2]),
-                    size = 0.8)
+                    linewidth = 0.8)
         }
       
       dodg <- ifelse(is.factor(data_summary[, pred.x1]), 0.7, 0) # amount of dodging varies with x-vector class
@@ -2014,8 +2022,7 @@ final_plotting <- function(data_summary, predictions, predictors, response, inte
                         #width = 0.1,
                         priority = "density",
                     #    method = "square",  # "quasirandom", "smiley", "compactswarm", "hex", "square"
-                        dodge.width = dodg, 
-                        groupOnX = TRUE)
+                        dodge.width = dodg)
         
   # The following lines can go if we agree on sticking to beeswarm:     
   #      plot.2pred <- plot.2pred +
