@@ -1,7 +1,7 @@
 #---------------------------------------------------#
 #  A versatile workflow for linear modelling in R
 #  Matteo Santon, Fraenzi Korner-Nievergelt, Nico Michiels, Nils Anthes
-#  Version date: 27 March 2023
+#  Version date: 03 November 2023
 #  -> TEMPLATE
 #---------------------------------------------------#
 
@@ -463,7 +463,7 @@ slope_estimates(data = df,
 pairwise_comparisons(data = df,
                      modelTMB = mod,
                      predictors = var_fac[1], # Name of one (or more!) factor predictor(s).
-                     component = "all",       # Returns differences for the conditional model ("cond"), or the zero-inflation part of the model ("zi").
+                     component = "cond",       # Returns differences for the conditional model ("cond"), or the zero-inflation part of the model ("zi").
                      dispScale = "response",  # "response" returns absolute differences for link identity models, and ratio or odds.ratios for log or logit link models 
                                               # "link" returns estimates on the link scale
                      contrasts = "all")       # "all" returns all pairwise comparisons, "within" only the comparisons among the levels of the first factor specified within each level of the second one
